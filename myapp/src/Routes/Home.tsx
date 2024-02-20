@@ -7,11 +7,11 @@ import {useState} from "react";
 
 const Wrapper = styled.div`
   background-color: black;
+  padding-bottom: 200px;
 `;
 
 const Loader = styled.div`
   height: 20vh;
-  text-align: center;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -44,30 +44,35 @@ const Slider = styled.div`
 
 const Row = styled(motion.div)`
   display: grid;
-  gap: 10px;
+  gap: 5px;
   grid-template-columns: repeat(6, 1fr);
   position: absolute;
   width: 100%;
 `;
 
-const Box = styled(motion.div)`
+//motion div라는 prop이 있기때문에 다른 방식으로 prop 지정
+const Box = styled(motion.div)<{bgPhoto: string}>`
   background-color: white;
+  background-image: url(${(props) => props.bgPhoto});
+  background-size: cover;
+  background-position: center center;
   height: 200px;
-  color: red;
   font-size: 66px;
 `;
 
 const rowVariants = {
   hidden: {
-    x: window.outerWidth + 10,
+    x: window.outerWidth + 5,
   },
   visible: {
     x: 0,
   },
   exit: {
-    x: -window.outerWidth - 10,
+    x: -window.outerWidth - 5,
   },
 };
+
+const offset = 6;
 
 function Home() {
   //fetch api for banner
@@ -76,7 +81,20 @@ function Home() {
     getMovies
   );
   const [index, setIndex] = useState(0);
-  const increaseIndex = () => setIndex((prev) => prev + 1);
+  const [leaving, setLeaving] = useState(false);
+  const increaseIndex = () => {
+    if (data) {
+      if (leaving) return;
+      toggleLeaving();
+      //이미 배너에 사용중인 영화가 있기에 -1
+      const totalMovies = data.results.length - 1;
+      const maxIndex = Math.floor(totalMovies / offset) - 1;
+      //다음 영화를 위해 index+1
+      //인덱스가 maxindex이면 0으로 되돌림 -> 그렇지 않으면 1증가
+      setIndex((prev) => (prev === maxIndex ? 0 : prev + 1));
+    }
+  };
+  const toggleLeaving = () => setLeaving((prev) => !prev);
 
   return (
     <Wrapper>
@@ -93,7 +111,9 @@ function Home() {
           </Banner>
           <Slider>
             {/* 컴포넌트가 렌더링되거나 파괴될 때 효과를 줄 수 있음  */}
-            <AnimatePresence>
+            {/* onExitComplete는 exit이 끝났을때 실행됨 */}
+            {/* initial={false}는 처음 시작시 initial을 적용시키지 않음 */}
+            <AnimatePresence initial={false} onExitComplete={toggleLeaving}>
               <Row
                 variants={rowVariants}
                 initial="hidden"
@@ -104,9 +124,17 @@ function Home() {
                 //따라서 모든 row를 렌더링할 필요가 없어짐
                 key={index}
               >
-                {[1, 2, 3, 4, 5, 6].map((i) => (
-                  <Box key={i}>{i}</Box>
-                ))}
+                {/* pagenation사용 */}
+                {/* 한개의 페이지에 6개씩 넣기 위함 -> 사전에 offset 지정*/}
+                {data?.results
+                  .slice(1)
+                  .slice(offset * index, offset * index + offset)
+                  .map((movie) => (
+                    <Box
+                      key={movie.id}
+                      bgPhoto={makeImagePath(movie.backdrop_path, "w500")}
+                    />
+                  ))}
               </Row>
             </AnimatePresence>
           </Slider>
