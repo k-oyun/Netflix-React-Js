@@ -58,7 +58,6 @@ const Box = styled(motion.div)<{bgPhoto: string}>`
   background-position: center center;
   height: 200px;
   font-size: 66px;
-
   //맨처음과 마지막 영화의 scale이 커지면서 이미지가 잘림
   //transform origin을 사용하여 이미지가 커지면 안되는 방향을 지정 ex)left, right
   &:first-child {
@@ -79,6 +78,30 @@ const boxVariants = {
   hover: {
     scale: 1.3,
     y: -50,
+    transition: {
+      delay: 0.3,
+      duration: 0.3,
+      type: "tween",
+    },
+  },
+};
+
+const Info = styled(motion.div)`
+  padding: 20px;
+  background-color: ${(props) => props.theme.black.lighter};
+  opacity: 0;
+  position: absolute;
+  width: 100%;
+  bottom: 0;
+  h4 {
+    text-align: center;
+    font-size: 18px;
+  }
+`;
+
+const InfoVariants = {
+  hover: {
+    opacity: 1,
     transition: {
       delay: 0.3,
       duration: 0.3,
@@ -166,7 +189,12 @@ function Home() {
                       //애니메이션의 튕김을 방지 tween | default값은 spring
                       transition={{type: "tween"}}
                       bgPhoto={makeImagePath(movie.backdrop_path, "w500")}
-                    />
+                    >
+                      {/* Info는 Box의 자식이기에 자동으로 whileHover같은 스타일이 상속됨 따라서 자신만의 variants를 만들어야함! */}
+                      <Info variants={InfoVariants}>
+                        <h4>{movie.title}</h4>
+                      </Info>
+                    </Box>
                   ))}
               </Row>
             </AnimatePresence>
