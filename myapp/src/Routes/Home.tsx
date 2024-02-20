@@ -58,7 +58,34 @@ const Box = styled(motion.div)<{bgPhoto: string}>`
   background-position: center center;
   height: 200px;
   font-size: 66px;
+
+  //맨처음과 마지막 영화의 scale이 커지면서 이미지가 잘림
+  //transform origin을 사용하여 이미지가 커지면 안되는 방향을 지정 ex)left, right
+  &:first-child {
+    transform-origin: center left;
+  }
+  &:last-child {
+    transform-origin: center right;
+  }
 `;
+
+const boxVariants = {
+  //평소 크기
+  normal: {
+    scale: 1,
+  },
+
+  //마우스를 올렸을때
+  hover: {
+    scale: 1.3,
+    y: -50,
+    transition: {
+      delay: 0.3,
+      duration: 0.3,
+      type: "tween",
+    },
+  },
+};
 
 const rowVariants = {
   hidden: {
@@ -132,6 +159,12 @@ function Home() {
                   .map((movie) => (
                     <Box
                       key={movie.id}
+                      //마우스를 대는 경우
+                      whileHover="hover"
+                      initial="normal"
+                      variants={boxVariants}
+                      //애니메이션의 튕김을 방지 tween | default값은 spring
+                      transition={{type: "tween"}}
                       bgPhoto={makeImagePath(movie.backdrop_path, "w500")}
                     />
                   ))}
