@@ -2,8 +2,14 @@ import {useQuery} from "react-query";
 import {IGetMoviesResult, getMovies} from "../api";
 import styled from "styled-components";
 import {makeImagePath} from "../utils";
-import {AnimatePresence, motion} from "framer-motion";
+import {
+  AnimatePresence,
+  motion,
+  useScroll,
+  useViewportScroll,
+} from "framer-motion";
 import {useState} from "react";
+import {useHistory, useRouteMatch} from "react-router-dom";
 
 const Wrapper = styled.div`
   background-color: black;
@@ -58,6 +64,7 @@ const Box = styled(motion.div)<{bgPhoto: string}>`
   background-position: center center;
   height: 200px;
   font-size: 66px;
+  cursor: pointer;
   //맨처음과 마지막 영화의 scale이 커지면서 이미지가 잘림
   //transform origin을 사용하여 이미지가 커지면 안되는 방향을 지정 ex)left, right
   &:first-child {
@@ -122,9 +129,32 @@ const rowVariants = {
   },
 };
 
+//영화를 눌렀을때 배경이 어두워지도록
+const Overlay = styled(motion.div)`
+  position: fixed;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.5);
+  opacity: 0;
+`;
+
+const BigMovie = styled(motion.div)`
+  position: absolute;
+  width: 40vw;
+  height: 80vh;
+  left: 0;
+  right: 0;
+  margin: 0 auto;
+`;
+
 const offset = 6;
 
 function Home() {
+  //url을 바꾸기위해 사용 useHistory
+  const history = useHistory();
+  //현재 url이 prop과 일치하는지 파악하기 위해 match 사용
+  const bigMovieMatch = useRouteMatch<{movieId: string}>("/movies/:movieId");
   //fetch api for banner
   const {data, isLoading} = useQuery<IGetMoviesResult>(
     ["movies", "noewPlaying"],
@@ -145,6 +175,17 @@ function Home() {
     }
   };
   const toggleLeaving = () => setLeaving((prev) => !prev);
+
+  const onBoxClicked = (movieId: number) => {
+    //클릭시 아래 url로 이동
+    history.push(`/movies/${movieId}`);
+  };
+
+  // scroll한 위치에 상관없이 모달이 가운데 나오게하기위함
+  const {scrollY} = useScroll();
+
+  //overlay를 눌렀을 경우 다시 /링크로 돌아가게
+  const onOverlayClick = () => history.push("/");
 
   return (
     <Wrapper>
@@ -181,11 +222,13 @@ function Home() {
                   .slice(offset * index, offset * index + offset)
                   .map((movie) => (
                     <Box
+                      layoutId={movie.id + ""}
                       key={movie.id}
                       //마우스를 대는 경우
                       whileHover="hover"
                       initial="normal"
                       variants={boxVariants}
+                      onClick={() => onBoxClicked(movie.id)}
                       //애니메이션의 튕김을 방지 tween | default값은 spring
                       transition={{type: "tween"}}
                       bgPhoto={makeImagePath(movie.backdrop_path, "w500")}
@@ -199,6 +242,22 @@ function Home() {
               </Row>
             </AnimatePresence>
           </Slider>
+          <AnimatePresence>
+            {bigMovieMatch ? (
+              <>
+                <Overlay
+                  onClick={onOverlayClick}
+                  exit={{opacity: 0}}
+                  animate={{opacity: 1}}
+                />
+                <BigMovie
+                  // 스크롤 위치 상관없이 모달을 정위치 시키기 위함
+                  style={{top: scrollY.get() + 10}}
+                  layoutId={bigMovieMatch.params.movieId}
+                ></BigMovie>
+              </>
+            ) : null}
+          </AnimatePresence>
         </>
       )}
     </Wrapper>

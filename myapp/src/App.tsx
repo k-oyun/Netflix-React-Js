@@ -15,7 +15,8 @@ function App() {
           <Search />
         </Route>
         {/* 맨 처음경로를 마지막에 두어야함 */}
-        <Route path="/">
+        {/* movieId는 url이 현재 어디 있는지 파악하기 위해 추가하여 match 사용 */}
+        <Route path={["/", "/movies/:movieId"]}>
           <Home />
         </Route>
       </Switch>
